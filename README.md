@@ -27,3 +27,19 @@ or
 ```bash
 podman-compose up
 ```
+
+The Rancher UI will be available at https://rancher.localhost/ 
+
+## Implementation notes
+
+1. The Rancher UI is accessible via HTTPS at `https://rancher.localhost`.
+
+2. Traefik has been added as a reverse proxy to handle SSL termination and routing to the Rancher UI. The configuration uses Let's Encrypt for certificate management, with the staging ACME server for testing purposes. 
+
+> The certificate is not valid but can be easily replaced with a valid one in production.
+
+3. The deployment consists of three nodes:
+   - One master node (`rancher`) running the Rancher server.
+   - Two agent nodes (`cattle-1` and `cattle-2`) connected to the master node.
+
+4. Data persistence local and uses named Docker volumes for each node.

@@ -14,10 +14,10 @@ x-common-k3s: &common-k3s
 services:
 
   traefik:
-    <<: *common-k3s
     image: "traefik:latest"
     container_name: k3s-demo-traefik
     hostname: k3s-demo-traefik
+    restart: unless-stopped
     command:
       - "--api.insecure=true"
       - "--providers.docker=true"
@@ -48,12 +48,8 @@ services:
       CATTLE_SERVER_URL: https://rancher.localhost
       CATTLE_HOST_LABELS: hostname=rancher
       CATTLE_BOOTSTRAP_PASSWORD: ciao1024
-    ports:
-      - "8080:80"
     volumes:
       - k3s-rancher:/var/lib/rancher/k3s
-      # This is just so that we get the kubeconfig file out
-      - .:/output
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.rancher.rule=Host(`rancher.localhost`)"
@@ -64,6 +60,7 @@ services:
       - "traefik.http.routers.rancher-secure.entrypoints=websecure"
       - "traefik.http.routers.rancher-secure.tls=true"
       - "traefik.http.routers.rancher-secure.tls.certresolver=default"
+      - "traefik.http.services.rancher.loadbalancer.server.port=80"
 
   cattle-1:
     <<: *common-k3s
