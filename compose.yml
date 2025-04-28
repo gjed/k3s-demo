@@ -1,0 +1,56 @@
+x-common-k3s: &common-k3s
+  restart: unless-stopped
+  tmpfs:
+    - /run
+    - /var/run
+  ulimits:
+    nproc: 65535
+    nofile:
+      soft: 65535
+      hard: 65535
+  privileged: true
+
+
+services:
+
+  rancher:
+    <<: *common-k3s
+    image: "rancher/rancher:${RANCHER_VERSION:-latest}"
+    container_name: k3s-demo-rancher
+    hostname: k3s-demo-rancher
+    command: server
+    environment:
+      - K3S_TOKEN=${K3S_TOKEN:?err}
+      - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
+      - K3S_KUBECONFIG_MODE=666
+    volumes:
+      - k3s-rancher:/var/lib/rancher/k3s
+      # This is just so that we get the kubeconfig file out
+      - .:/output
+
+  cattle-1:
+    <<: *common-k3s
+    image: "rancher/k3s:${K3S_VERSION:-latest}"
+    container_name: k3s-demo-cattle-1
+    hostname: k3s-demo-cattle-1
+    environment:
+      - K3S_URL=https://rancher:6443
+      - K3S_TOKEN=${K3S_TOKEN:?err}
+    volumes:
+      - k3s-cattle-1:/var/lib/rancher/k3s
+
+  cattle-2:
+    <<: *common-k3s
+    image: "rancher/k3s:${K3S_VERSION:-latest}"
+    container_name: k3s-demo-cattle-2
+    hostname: k3s-demo-cattle-2
+    environment:
+      - K3S_URL=https://rancher:6443
+      - K3S_TOKEN=${K3S_TOKEN:?err}
+    volumes:
+    - k3s-cattle-2:/var/lib/rancher/k3s
+
+volumes:
+  k3s-rancher: {}
+  k3s-cattle-1: {}
+  k3s-cattle-2: {}
