@@ -13,6 +13,28 @@ x-common-k3s: &common-k3s
 
 services:
 
+  traefik:
+    <<: *common-k3s
+    image: "traefik:latest"
+    container_name: k3s-demo-traefik
+    hostname: k3s-demo-traefik
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.default.acme.httpchallenge=true"
+      - "--certificatesresolvers.default.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.default.acme.email=rancher@localhost"
+      - "--certificatesresolvers.default.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.default.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - traefik-certificates:/letsencrypt
+
   rancher:
     <<: *common-k3s
     image: "rancher/rancher:${RANCHER_VERSION:-latest}"
@@ -20,13 +42,28 @@ services:
     hostname: k3s-demo-rancher
     command: server
     environment:
-      - K3S_TOKEN=${K3S_TOKEN:?err}
-      - K3S_KUBECONFIG_OUTPUT=/output/kubeconfig.yaml
-      - K3S_KUBECONFIG_MODE=666
+      K3S_TOKEN: ${K3S_TOKEN:?err}
+      K3S_KUBECONFIG_OUTPUT: /output/kubeconfig.yaml
+      K3S_KUBECONFIG_MODE: 666
+      CATTLE_SERVER_URL: https://rancher.localhost
+      CATTLE_HOST_LABELS: hostname=rancher
+      CATTLE_BOOTSTRAP_PASSWORD: ciao1024
+    ports:
+      - "8080:80"
     volumes:
       - k3s-rancher:/var/lib/rancher/k3s
       # This is just so that we get the kubeconfig file out
       - .:/output
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rancher.rule=Host(`rancher.localhost`)"
+      - "traefik.http.routers.rancher.entrypoints=web"
+      - "traefik.http.middlewares.rancher-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.rancher.middlewares=rancher-https-redirect"
+      - "traefik.http.routers.rancher-secure.rule=Host(`rancher.localhost`)"
+      - "traefik.http.routers.rancher-secure.entrypoints=websecure"
+      - "traefik.http.routers.rancher-secure.tls=true"
+      - "traefik.http.routers.rancher-secure.tls.certresolver=default"
 
   cattle-1:
     <<: *common-k3s
@@ -34,10 +71,13 @@ services:
     container_name: k3s-demo-cattle-1
     hostname: k3s-demo-cattle-1
     environment:
-      - K3S_URL=https://rancher:6443
-      - K3S_TOKEN=${K3S_TOKEN:?err}
+      K3S_URL: https://rancher:6443
+      K3S_TOKEN: ${K3S_TOKEN:?err}
     volumes:
       - k3s-cattle-1:/var/lib/rancher/k3s
+    labels:
+      - "traefik.enable=false"
+    
 
   cattle-2:
     <<: *common-k3s
@@ -45,12 +85,15 @@ services:
     container_name: k3s-demo-cattle-2
     hostname: k3s-demo-cattle-2
     environment:
-      - K3S_URL=https://rancher:6443
-      - K3S_TOKEN=${K3S_TOKEN:?err}
+      K3S_URL: https://rancher:6443
+      K3S_TOKEN: ${K3S_TOKEN:?err}
     volumes:
     - k3s-cattle-2:/var/lib/rancher/k3s
+    labels:
+      - "traefik.enable=false"
 
 volumes:
   k3s-rancher: {}
   k3s-cattle-1: {}
   k3s-cattle-2: {}
+  traefik-certificates: {}
