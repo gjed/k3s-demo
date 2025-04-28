@@ -43,3 +43,5 @@ The Rancher UI will be available at https://rancher.localhost/
    - Two agent nodes (`cattle-1` and `cattle-2`) connected to the master node.
 
 4. Data persistence local and uses named Docker volumes for each node.
+
+5. The `--privileged` flag is required to allow the K3s agent to run correctly. It grants the container full access to system resources, such as the `/sys` filesystem and other kernel interfaces, which are essential for Kubernetes components to manage networking, storage, and node-level operations.
