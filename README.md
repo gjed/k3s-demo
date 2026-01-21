@@ -1,6 +1,8 @@
 # k3s-demo
 
-This repository contains a `docker-compose.yml` file for deploying a K3S cluster with Rancher web UI. The deployment is designed to be simple and straightforward, allowing for easy setup and testing of K3S and Rancher.
+> **Note:** This repository is archived and no longer actively maintained. Feel free to fork it and continue development if you find it useful.
+
+This repository contains a `docker-compose.yml` file for deploying a K3S cluster with Rancher web UI using the [Linuxserver.io WireGuard mod](https://github.com/linuxserver/docker-mods). The deployment is designed to be simple and straightforward, allowing for easy setup and testing of K3S and Rancher with WireGuard networking support.
 
 ## Requirements
 
